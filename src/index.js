@@ -14,33 +14,26 @@ const refs = {
     "input": document.querySelector("[data-input]"),
     "gallery": document.querySelector(".gallery")
 }
- const API_KEY = "25692135-5d828cfba98a327a5afd7ad3f";
+const API_KEY = "25692135-5d828cfba98a327a5afd7ad3f";
 const URL = "https://pixabay.com/api/?key=";
+const URL2 = "https://pixabay.com/api/";
 
 let page = 0;
 let globalSearchQuery;
- let hitsCounter = 0;
+let hitsCounter = 0;
  refs.form.addEventListener("submit", evt)
 function evt(event) {
   event.preventDefault();
 }
 refs.loadBtn.classList.add("hidden");
 refs.submitBtn.addEventListener("click", onSearch);
-// function onSearch(e) {
-//     e.preventDefault();
-//     let searchQuery = refs.input.value.trim();
-//     pixaBay.query = searchQuery;
-//     pixaBay.resetPage();
-//     pixaBay.fetchPictures(refs.gallery.innerHTML);
-// }
-
 
 function onSearch() {
     let searchQuery = refs.input.value.trim();
     
     globalSearchQuery = searchQuery;
     page = 1;
-    tryFetch(searchQuery)
+    axiTest2(searchQuery)
         .then(function (response) {
             if (response.hits.length === 0) {
                 throw Error;
@@ -59,7 +52,21 @@ function onSearch() {
              Notiflix.Notify.failure("Sorry, there are no images matching your search query. Please try again.")
         })
 }
+function axiTest2(value) {
+    return axios.get(`${URL2}`, {
+        params: {
+            key: API_KEY,
+            q: encodeURIComponent(value),
+            image_type: "photo",
+            orientation: "horizontal",
+            safesearch: true,
+            per_page: 40,
+            page: page,
 
+        }
+    })
+    .then(response => response.data)
+}
 function makeGallery(value) {
     return value.map(({ tags, likes, views, comments, downloads,webformatURL}) => {
         return `
@@ -90,7 +97,7 @@ function makeGallery(value) {
 refs.loadBtn.addEventListener("click", loadMore);
 function loadMore() {
     page += 1;
-    tryFetch(globalSearchQuery)
+    axiTest2(globalSearchQuery)
         .then(response => {
             hitsCounter += response.hits.length;
             if (hitsCounter >= response.totalHits) {
@@ -108,6 +115,9 @@ function tryFetch(value) {
  return       fetch(`${URL}` + API_KEY + "&q=" + encodeURIComponent(value)+ `&image_type= photo&orientation=horizontal&safesearch=true&per_page=40&page=${page}`)
 .then (response => response.json())
 }
+
+
+
 // webformatURL - ссылка на маленькое изображение для списка карточек.
 // largeImageURL - ссылка на большое изображение.
 // tags - строка с описанием изображения. Подойдет для атрибута alt.
