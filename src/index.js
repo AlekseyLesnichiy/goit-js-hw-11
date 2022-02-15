@@ -1,7 +1,6 @@
 import './sass/main.scss';
-import PixabayService from './testClass';
 // Описан в документации
-// import SimpleLightbox from "simplelightbox";
+import SimpleLightbox from "simplelightbox";
 // Дополнительный импорт стилей
 import "simplelightbox/dist/simple-lightbox.min.css";
 const axios = require('axios').default;
@@ -15,9 +14,8 @@ const refs = {
     "gallery": document.querySelector(".gallery")
 }
 const API_KEY = "25692135-5d828cfba98a327a5afd7ad3f";
-const URL = "https://pixabay.com/api/?key=";
-const URL2 = "https://pixabay.com/api/";
-
+const URL = "https://pixabay.com/api/";
+let lightbox = new SimpleLightbox('.photo-card a');
 let page = 0;
 let globalSearchQuery;
 let hitsCounter = 0;
@@ -27,13 +25,14 @@ function evt(event) {
 }
 refs.loadBtn.classList.add("hidden");
 refs.submitBtn.addEventListener("click", onSearch);
-
+refs.loadBtn.addEventListener("click", loadMore);
 function onSearch() {
     let searchQuery = refs.input.value.trim();
     
     globalSearchQuery = searchQuery;
     page = 1;
-    axiTest2(searchQuery)
+    
+    axiGet(searchQuery)
         .then(function (response) {
             if (response.hits.length === 0) {
                 throw Error;
@@ -47,13 +46,16 @@ function onSearch() {
         .then(value => {
             refs.gallery.innerHTML = makeGallery(value)
             refs.loadBtn.classList.remove("hidden");
+            lightbox.refresh();
+            smoothScroll();
         })
     .catch(error => {
              Notiflix.Notify.failure("Sorry, there are no images matching your search query. Please try again.")
-        })
+    })
+    
 }
-function axiTest2(value) {
-    return axios.get(`${URL2}`, {
+function axiGet(value) {
+    return axios.get(`${URL}`, {
         params: {
             key: API_KEY,
             q: encodeURIComponent(value),
@@ -68,11 +70,11 @@ function axiTest2(value) {
     .then(response => response.data)
 }
 function makeGallery(value) {
-    return value.map(({ tags, likes, views, comments, downloads,webformatURL}) => {
+    return value.map(({ tags, likes, views, comments, downloads,webformatURL,largeImageURL}) => {
         return `
       
 <div class="photo-card">
-  <img src="${webformatURL}" alt="${tags}" loading="lazy" />
+ <a href="${largeImageURL}"> <img src="${webformatURL}" alt="${tags}" loading="lazy"/> </a>
   <div class="info">
     <p class="info-item">
       <b>Likes</b>
@@ -94,10 +96,10 @@ function makeGallery(value) {
 </div>`
     }).join(" ");
 }
-refs.loadBtn.addEventListener("click", loadMore);
+
 function loadMore() {
     page += 1;
-    axiTest2(globalSearchQuery)
+    axiGet(globalSearchQuery)
         .then(response => {
             hitsCounter += response.hits.length;
             if (hitsCounter >= response.totalHits) {
@@ -108,13 +110,26 @@ function loadMore() {
         })
     .then(value => value.hits)
         .then(value => {
-            refs.gallery.insertAdjacentHTML("beforeend",makeGallery(value))
+            refs.gallery.insertAdjacentHTML("beforeend", makeGallery(value))
+            lightbox.refresh();
+            smoothScroll();
         })
 }
-function tryFetch(value) {
- return       fetch(`${URL}` + API_KEY + "&q=" + encodeURIComponent(value)+ `&image_type= photo&orientation=horizontal&safesearch=true&per_page=40&page=${page}`)
-.then (response => response.json())
+function smoothScroll() {
+    const { height: cardHeight } = document
+  .querySelector(".gallery")
+  .firstElementChild.getBoundingClientRect();
+
+window.scrollBy({
+  top: cardHeight * 5,
+  behavior: "smooth",
+});
 }
+
+// function tryFetch(value) {
+//  return       fetch(`${URL}` + API_KEY + "&q=" + encodeURIComponent(value)+ `&image_type= photo&orientation=horizontal&safesearch=true&per_page=40&page=${page}`)
+// .then (response => response.json())
+// }
 
 
 
